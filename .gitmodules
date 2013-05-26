@@ -1,0 +1,7 @@
+[submodule "lib/vendor/gnus"]
+	path = lib/vendor/gnus
+	url = http://git.gnus.org/gnus.git
+[submodule "lib/vendor/emacs-w3m"]
+	path = lib/vendor/emacs-w3m
+	url = https://github.com/emacsmirror/w3m.git
+        ignore = dirty
