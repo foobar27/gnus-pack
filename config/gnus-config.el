@@ -67,8 +67,80 @@
                      :connection ssl
                      :leave t)))
 
-; buffer switching, see: http://www.emacswiki.org/emacs/SwitchToGnus
+(require 'epg)
 
+;;(add-hook 'gnus-group-mode-hook 'gnus-topic-mode)
+
+;; formatting, see http://www.emacswiki.org/emacs/TomRauchenwald
+;; eye candy
+(copy-face 'font-lock-variable-name-face 'gnus-face-6)
+(setq gnus-face-6 'gnus-face-6)
+(copy-face 'font-lock-constant-face 'gnus-face-7)
+(setq gnus-face-7 'gnus-face-7)
+(copy-face 'gnus-face-7 'gnus-summary-normal-unread)
+(copy-face 'font-lock-constant-face 'gnus-face-8)
+(set-face-foreground 'gnus-face-8 "gray50")
+(setq gnus-face-8 'gnus-face-8)
+(copy-face 'font-lock-constant-face 'gnus-face-9)
+(set-face-foreground 'gnus-face-9 "gray70")
+(setq gnus-face-9 'gnus-face-9)
+(setq gnus-summary-make-false-root 'dummy)
+(setq gnus-summary-make-false-root-always nil)
+(defun oxy-unicode-threads ()
+  (interactive)
+  (setq gnus-summary-dummy-line-format "                    %8{│%}   %(%8{│%}                       %7{│%}%) %6{□%}  %S\n"
+        ;;gnus-summary-dummy-line-format "    %8{│%}   %(%8{│%}                       %7{│%}%) %6{□%}  %S\n"
+;;        gnus-summary-line-format "%8{%4k│%}%9{%U%R%z%}%8{│%}%*%(%-23,23f%)%7{│%} %6{%B%} %s\n"
+        gnus-summary-line-format "%8{%20&user-date;│%}%9{%U%R%z%}%8{│%}%*%(%-23,23f%)%7{│%} %6{%B%} %s\n"
+        ;;gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
+	gnus-sum-thread-tree-indent " "
+	gnus-sum-thread-tree-root "■ "
+	gnus-sum-thread-tree-false-root "□ "
+	gnus-sum-thread-tree-single-indent "▣ "
+	gnus-sum-thread-tree-leaf-with-other "├─▶ "
+	gnus-sum-thread-tree-vertical "│"
+	gnus-sum-thread-tree-single-leaf "└─▶ "))
+
+(defun oxy-unicode-threads-heavy ()
+  (interactive)
+  (setq gnus-summary-line-format "%8{%4k│%}%9{%U%R%z%}%8{│%}%*%(%-23,23f%)%7{║%} %6{%B%} %s\n"
+	gnus-summary-dummy-line-format "    %8{│%}   %(%8{│%}                       %7{║%}%) %6{┏○%}  %S\n"
+	gnus-sum-thread-tree-indent " "
+	gnus-sum-thread-tree-root "┏● "
+	gnus-sum-thread-tree-false-root " ○ "
+	gnus-sum-thread-tree-single-indent " ● "
+	gnus-sum-thread-tree-leaf-with-other "┣━━❯ "
+	gnus-sum-thread-tree-vertical "┃"
+	gnus-sum-thread-tree-single-leaf "┗━━❯ "))
+
+(oxy-unicode-threads)
+
+;; Replacing common prefixes of group names with spaces
+;; see: http://www.emacswiki.org/emacs/GnusFormatting#toc5
+(defvar gnus-user-format-function-g-prev "" "")
+(defun empty-common-prefix (left right)
+  "Given `left' '(\"foo\" \"bar\" \"fie\") and `right' '(\"foo\"
+    \"bar\" \"fum\"), return '(\"   \" \"   \" \"fum\")."
+  (if (and (cdr right)			; always keep the last part of right
+    	   (equal (car left) (car right)))
+      (cons (make-string (length (car left)) ? )
+    	    (empty-common-prefix (cdr left) (cdr right)))
+    right))
+
+(defun gnus-user-format-function-g (arg)
+  "The full group name, but if it starts with a previously seen
+    prefix, empty that prefix."
+  (if (equal gnus-user-format-function-g-prev gnus-tmp-group) ; line-format is updated on exiting the summary, making prev equal this
+      gnus-tmp-group
+    (let* ((prev (split-string-and-unquote gnus-user-format-function-g-prev "\\."))
+    	   (this (split-string-and-unquote gnus-tmp-group "\\.")))
+      (setq gnus-user-format-function-g-prev gnus-tmp-group)
+      (combine-and-quote-strings
+       (empty-common-prefix prev this)
+       "."))))
+(setq gnus-group-line-format "%M%S%p%P%5y:%B%(%ug%)\n")
+
+;; buffer switching, see: http://www.emacswiki.org/emacs/SwitchToGnus
 (defun switch-to-gnus (&optional arg)
   "Switch to a Gnus related buffer.
     Candidates are buffers starting with
